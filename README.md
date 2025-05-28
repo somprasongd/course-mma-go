@@ -45,3 +45,16 @@
   ```
 
 - กดที่คำว่า Send Request
+
+## รันด้วย Makefile
+
+- สร้างไฟล์ `Makefile`
+
+  ```make
+  .PHONY: run
+
+  run:
+    go run main.go
+  ```
+
+- รันด้วยคำสั่ง `make run` แทน

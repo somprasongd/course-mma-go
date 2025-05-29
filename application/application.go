@@ -2,18 +2,21 @@ package application
 
 import (
 	"go-mma/config"
+	"go-mma/data/sqldb"
 	"log"
 )
 
 type Application struct {
 	config     config.Config
 	httpServer HTTPServer
+	db         sqldb.DBContext
 }
 
-func New(config config.Config) *Application {
+func New(config config.Config, db sqldb.DBContext) *Application {
 	return &Application{
 		config:     config,
 		httpServer: newHTTPServer(config),
+		db:         db,
 	}
 }
 

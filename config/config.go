@@ -9,12 +9,14 @@ import (
 var (
 	ErrInvalidHTTPPort = errors.New("HTTP_PORT must be a positive integer")
 	ErrGracefulTimeout = errors.New("GRACEFUL_TIMEOUT must be a positive duration")
+	ErrDSN             = errors.New("DB_DSN must be set")
 )
 
 type Config struct {
 	AppVersion      string
 	HTTPPort        int
 	GracefulTimeout time.Duration
+	DSN             string
 }
 
 func Load() (*Config, error) {
@@ -22,6 +24,7 @@ func Load() (*Config, error) {
 		AppVersion:      env.GetDefault("APP_VERSION", "0.0.1"),
 		HTTPPort:        env.GetIntDefault("HTTP_PORT", 8090),
 		GracefulTimeout: env.GetDurationDefault("GRACEFUL_TIMEOUT", 5*time.Second),
+		DSN:             env.Get("DB_DSN"),
 	}
 	err := config.Validate()
 	if err != nil {
@@ -36,6 +39,9 @@ func (c *Config) Validate() error {
 	}
 	if c.GracefulTimeout <= 0 {
 		return ErrGracefulTimeout
+	}
+	if len(c.DSN) == 0 {
+		return ErrDSN
 	}
 
 	return nil

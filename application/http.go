@@ -75,12 +75,8 @@ func (s *httpServer) RegisterRoutes() {
 
 	orders := v1.Group("/orders")
 	{
-		orders.Post("", func(c fiber.Ctx) error {
-			return c.Status(fiber.StatusCreated).JSON(fiber.Map{"id": "o1"})
-		})
-
-		orders.Delete("/:orderID", func(c fiber.Ctx) error {
-			return c.SendStatus(fiber.StatusNoContent)
-		})
+		hdlr := handlers.NewOrderHandler()
+		orders.Post("", hdlr.CreateOrder)
+		orders.Delete("/:orderID", hdlr.CancelOrder)
 	}
 }

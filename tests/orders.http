@@ -5,5 +5,10 @@
 POST {{host}}/{{base_url}} HTTP/1.1
 content-type: application/json
 
+{
+  "customer_id": "1",
+  "order_total": 10
+}
+
 ### Cancel Order
 DELETE {{host}}/{{base_url}}/{{order_id}} HTTP/1.1

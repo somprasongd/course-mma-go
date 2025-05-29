@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-mma/config"
+	"go-mma/data/sqldb"
 	"go-mma/handlers"
 	"log"
 	"net/http"
@@ -17,7 +18,7 @@ import (
 type HTTPServer interface {
 	Start()
 	Shutdown() error
-	RegisterRoutes()
+	RegisterRoutes(db sqldb.DBContext)
 }
 
 type httpServer struct {
@@ -64,12 +65,12 @@ func (s *httpServer) Router() *fiber.App {
 	return s.app
 }
 
-func (s *httpServer) RegisterRoutes() {
+func (s *httpServer) RegisterRoutes(db sqldb.DBContext) {
 	v1 := s.app.Group("/api/v1")
 
 	customers := v1.Group("/customers")
 	{
-		hdlr := handlers.NewCustomerHandler()
+		hdlr := handlers.NewCustomerHandler(db)
 		customers.Post("", hdlr.CreateCustomer)
 	}
 

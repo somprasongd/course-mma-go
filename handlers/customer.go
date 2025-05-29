@@ -2,15 +2,17 @@ package handlers
 
 import (
 	"fmt"
+	"go-mma/data/sqldb"
 
 	"github.com/gofiber/fiber/v3"
 )
 
 type CustomerHandler struct {
+	db sqldb.DBContext
 }
 
-func NewCustomerHandler() *CustomerHandler {
-	return &CustomerHandler{}
+func NewCustomerHandler(db sqldb.DBContext) *CustomerHandler {
+	return &CustomerHandler{db: db}
 }
 
 func (h *CustomerHandler) CreateCustomer(c fiber.Ctx) error {

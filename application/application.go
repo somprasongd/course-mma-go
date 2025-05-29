@@ -38,5 +38,5 @@ func (app *Application) Shutdown() error {
 }
 
 func (app *Application) RegisterRoutes() {
-	app.httpServer.RegisterRoutes()
+	app.httpServer.RegisterRoutes(app.db)
 }

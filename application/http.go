@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"go-mma/config"
 	"go-mma/data/sqldb"
-	"go-mma/handlers"
+	"go-mma/handler"
 	"log"
 	"net/http"
 

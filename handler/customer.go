@@ -1,18 +1,20 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"go-mma/data/sqldb"
+	"time"
 
 	"github.com/gofiber/fiber/v3"
 )
 
 type CustomerHandler struct {
-	db sqldb.DBContext
+	dbCtx sqldb.DBContext
 }
 
 func NewCustomerHandler(db sqldb.DBContext) *CustomerHandler {
-	return &CustomerHandler{db: db}
+	return &CustomerHandler{dbCtx: db}
 }
 
 func (h *CustomerHandler) CreateCustomer(c fiber.Ctx) error {
@@ -36,8 +38,20 @@ func (h *CustomerHandler) CreateCustomer(c fiber.Ctx) error {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": "credit must be greater than 0"})
 	}
 
-	// TODO: save new customer to the database
+	// save new customer to the database
+	sql := `INSERT INTO customers (name, credit) VALUES ($1, $2) RETURNING id`
+	ctx, cancel := context.WithTimeout(c.Context(), 30*time.Second)
+	defer cancel()
+
+	var id int
+	if err := h.dbCtx.DB().QueryRowContext(ctx, sql, payload.Name, payload.Credit).Scan(&id); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
 
 	// Return a created response
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"id": "c1"})
+	type CreateCustomerResponse struct {
+		ID int `json:"id"`
+	}
+	resp := &CreateCustomerResponse{ID: id}
+	return c.Status(fiber.StatusCreated).JSON(resp)
 }

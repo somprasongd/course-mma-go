@@ -1,9 +1,10 @@
 package application
 
 import (
+	"fmt"
 	"go-mma/config"
 	"go-mma/data/sqldb"
-	"log"
+	"go-mma/util/logger"
 )
 
 type Application struct {
@@ -28,11 +29,11 @@ func (app *Application) Run() error {
 
 func (app *Application) Shutdown() error {
 	// Gracefully close fiber server
-	log.Println("Shutting down server")
+	logger.Log.Info("Shutting down server")
 	if err := app.httpServer.Shutdown(); err != nil {
-		log.Fatalf("Error shutting down server: %v", err)
+		logger.Log.Fatal(fmt.Sprintf("Error shutting down server: %v", err))
 	}
-	log.Println("Server stopped")
+	logger.Log.Info("Server stopped")
 
 	return nil
 }

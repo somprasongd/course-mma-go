@@ -1,27 +1,31 @@
 package main
 
 import (
+	"fmt"
 	"go-mma/application"
 	"go-mma/config"
 	"go-mma/data/sqldb"
-	"log"
+	"go-mma/util/logger"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
 func main() {
+	logger.Init()
+	defer logger.Log.Sync() // Ensure logs are written before exit
+
 	config, err := config.Load()
 	if err != nil {
-		log.Panic(err)
+		logger.Log.Panic(err.Error())
 	}
 	db, closeDB, err := sqldb.New(config.DSN)
 	if err != nil {
-		log.Panic(err)
+		logger.Log.Panic(err.Error())
 	}
 	defer func() {
 		if err := closeDB(); err != nil {
-			log.Println("Error closing database:", err)
+			logger.Log.Error(fmt.Sprintf("Error closing database: %v", err))
 		}
 	}()
 
@@ -38,5 +42,5 @@ func main() {
 
 	// Optionally: close DB, cleanup, etc.
 
-	log.Println("Shutdown complete.")
+	logger.Log.Info("Shutdown complete.")
 }

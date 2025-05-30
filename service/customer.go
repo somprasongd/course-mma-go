@@ -6,7 +6,7 @@ import (
 	"go-mma/dto"
 	"go-mma/model"
 	"go-mma/repository"
-	"log"
+	"go-mma/util/logger"
 )
 
 type CustomerService struct {
@@ -24,7 +24,7 @@ func (s *CustomerService) CreateCustomer(ctx context.Context, req *dto.CreateCus
 	customer, err := s.custRepo.FindByEmail(ctx, req.Email)
 	if err != nil {
 		// error logging
-		log.Println(err)
+		logger.Log.Error(err.Error())
 		return nil, err
 	}
 
@@ -38,7 +38,7 @@ func (s *CustomerService) CreateCustomer(ctx context.Context, req *dto.CreateCus
 	// ส่งไปที่ Repository Layer เพื่อบันทึกข้อมูลลงฐานข้อมูล
 	if err := s.custRepo.Create(ctx, customer); err != nil {
 		// error logging
-		log.Println(err)
+		logger.Log.Error(err.Error())
 		return nil, err
 	}
 

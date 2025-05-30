@@ -3,17 +3,17 @@ package application
 import (
 	"context"
 	"fmt"
+	"go-mma/application/middleware"
 	"go-mma/config"
 	"go-mma/data/sqldb"
 	"go-mma/handler"
 	"go-mma/repository"
 	"go-mma/service"
-	"log"
+	"go-mma/util/logger"
 	"net/http"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
-	"github.com/gofiber/fiber/v3/middleware/logger"
 	"github.com/gofiber/fiber/v3/middleware/recover"
 )
 
@@ -41,18 +41,18 @@ func newFiber(config config.Config) *fiber.App {
 	})
 
 	// global middleware
-	app.Use(cors.New())    // CORS ลำดับแรก เพื่อให้ OPTIONS request ผ่านได้เสมอ
-	app.Use(recover.New()) // auto-recovers from panic (internal only)
-	app.Use(logger.New())  // logs HTTP request
+	app.Use(cors.New())                 // CORS ลำดับแรก เพื่อให้ OPTIONS request ผ่านได้เสมอ
+	app.Use(recover.New())              // auto-recovers from panic (internal only)
+	app.Use(middleware.RequestLogger()) // logs HTTP request
 
 	return app
 }
 
 func (s *httpServer) Start() {
 	go func() {
-		log.Printf("Starting server on port %d", s.config.HTTPPort)
+		logger.Log.Info(fmt.Sprintf("Starting server on port %d", s.config.HTTPPort))
 		if err := s.app.Listen(fmt.Sprintf(":%d", s.config.HTTPPort)); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Error starting server: %v", err)
+			logger.Log.Fatal(fmt.Sprintf("Error starting server: %v", err))
 		}
 	}()
 }

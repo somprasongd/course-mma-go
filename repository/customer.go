@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"go-mma/data/sqldb"
 	"go-mma/model"
@@ -20,7 +21,7 @@ func NewCustomerRepository(dbCtx sqldb.DBContext) *CustomerRepository {
 
 func (r *CustomerRepository) Create(ctx context.Context, customer *model.Customer) error {
 	query := `
-INSERT INTO public.customers (name, credit)
+INSERT INTO public.customers (email, credit)
 VALUES ($1, $2)
 RETURNING *
 `
@@ -30,10 +31,33 @@ RETURNING *
 	defer cancel()
 
 	err := r.dbCtx.DB().
-		QueryRowxContext(ctx, query, customer.Name, customer.Credit).
+		QueryRowxContext(ctx, query, customer.Email, customer.Credit).
 		StructScan(customer)
 	if err != nil {
 		return fmt.Errorf("failed to create customer: %w", err) // Return an error if the query execution fails
 	}
 	return nil // Return nil if the operation is successful
+}
+
+func (r *CustomerRepository) FindByEmail(ctx context.Context, email string) (*model.Customer, error) {
+	query := `
+SELECT id, email, credit, created_at, updated_at
+FROM public.customers
+WHERE email = $1
+`
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	customer := &model.Customer{}
+	err := r.dbCtx.DB().
+		QueryRowxContext(ctx, query, email).
+		StructScan(customer)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to select customer: %w", err)
+	}
+	return customer, nil
 }

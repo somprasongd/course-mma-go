@@ -1,16 +1,22 @@
 package dto
 
-import "errors"
+import (
+	"errors"
+	"net/mail"
+)
 
 type CreateCustomerRequest struct {
-	Name   string `json:"name"`
+	Email  string `json:"email"`
 	Credit int    `json:"credit"`
 }
 
 func (r *CreateCustomerRequest) Validate() error {
 	var errs error
-	if r.Name == "" {
-		errs = errors.Join(errs, errors.New("name is required"))
+	if r.Email == "" {
+		errs = errors.Join(errs, errors.New("email is required"))
+	}
+	if _, err := mail.ParseAddress(r.Email); err != nil {
+		errs = errors.Join(errs, errors.New("email is invalid"))
 	}
 	if r.Credit <= 0 {
 		errs = errors.Join(errs, errors.New("credit must be greater than 0"))

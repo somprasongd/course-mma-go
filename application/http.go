@@ -6,6 +6,8 @@ import (
 	"go-mma/config"
 	"go-mma/data/sqldb"
 	"go-mma/handler"
+	"go-mma/repository"
+	"go-mma/service"
 	"log"
 	"net/http"
 
@@ -39,9 +41,9 @@ func newFiber(config config.Config) *fiber.App {
 	})
 
 	// global middleware
-	app.Use(logger.New())  // logs HTTP request/response details
-	app.Use(recover.New()) // recovers from any panics
-	app.Use(cors.New())    // allows all origins
+	app.Use(cors.New())    // CORS ลำดับแรก เพื่อให้ OPTIONS request ผ่านได้เสมอ
+	app.Use(recover.New()) // auto-recovers from panic (internal only)
+	app.Use(logger.New())  // logs HTTP request
 
 	return app
 }
@@ -70,13 +72,15 @@ func (s *httpServer) RegisterRoutes(db sqldb.DBContext) {
 
 	customers := v1.Group("/customers")
 	{
-		hdlr := handlers.NewCustomerHandler(db)
+		repo := repository.NewCustomerRepository(db)
+		svc := service.NewCustomerService(repo)
+		hdlr := handler.NewCustomerHandler(svc)
 		customers.Post("", hdlr.CreateCustomer)
 	}
 
 	orders := v1.Group("/orders")
 	{
-		hdlr := handlers.NewOrderHandler()
+		hdlr := handler.NewOrderHandler()
 		orders.Post("", hdlr.CreateOrder)
 		orders.Delete("/:orderID", hdlr.CancelOrder)
 	}

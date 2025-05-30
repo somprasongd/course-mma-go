@@ -1,10 +1,9 @@
-create table public.orders (
-  id serial PRIMARY KEY,
-  customer_id integer NOT NULL,
-  order_total integer NOT NULL,
-  created_at timestamp DEFAULT CURRENT_TIMESTAMP,
-  canceld_at timestamp,
-  CONSTRAINT fk_customer
-      FOREIGN KEY(customer_id)
-        REFERENCES customers(id)
+CREATE TABLE public.orders (
+	id serial4 NOT NULL,
+	customer_id int4 NOT NULL,
+	order_total int4 NOT NULL,
+	created_at timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	canceld_at timestamp NULL,
+	CONSTRAINT orders_pkey PRIMARY KEY (id),
+	CONSTRAINT fk_customer FOREIGN KEY (customer_id) REFERENCES public.customers(id)
 );

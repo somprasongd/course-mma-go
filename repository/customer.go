@@ -10,17 +10,24 @@ import (
 	"time"
 )
 
-type CustomerRepository struct {
+type CustomerRepository interface {
+	Create(ctx context.Context, customer *model.Customer) error
+	FindByEmail(ctx context.Context, email string) (*model.Customer, error)
+	FindByID(ctx context.Context, id int) (*model.Customer, error)
+	UpdateCredit(ctx context.Context, customer *model.Customer) error
+}
+
+type customerRepository struct {
 	dbCtx transactor.DBContext
 }
 
-func NewCustomerRepository(dbCtx transactor.DBContext) *CustomerRepository {
-	return &CustomerRepository{
+func NewCustomerRepository(dbCtx transactor.DBContext) CustomerRepository {
+	return &customerRepository{
 		dbCtx: dbCtx,
 	}
 }
 
-func (r *CustomerRepository) Create(ctx context.Context, customer *model.Customer) error {
+func (r *customerRepository) Create(ctx context.Context, customer *model.Customer) error {
 	query := `
 INSERT INTO public.customers (email, credit)
 VALUES ($1, $2)
@@ -40,7 +47,7 @@ RETURNING *
 	return nil // Return nil if the operation is successful
 }
 
-func (r *CustomerRepository) FindByEmail(ctx context.Context, email string) (*model.Customer, error) {
+func (r *customerRepository) FindByEmail(ctx context.Context, email string) (*model.Customer, error) {
 	query := `
 SELECT id, email, credit, created_at, updated_at
 FROM public.customers
@@ -63,7 +70,7 @@ WHERE email = $1
 	return customer, nil
 }
 
-func (r *CustomerRepository) FindByID(ctx context.Context, id int) (*model.Customer, error) {
+func (r *customerRepository) FindByID(ctx context.Context, id int) (*model.Customer, error) {
 	query := `
 	SELECT *
 	FROM public.customers
@@ -84,7 +91,7 @@ func (r *CustomerRepository) FindByID(ctx context.Context, id int) (*model.Custo
 	return &customer, nil
 }
 
-func (r *CustomerRepository) UpdateCredit(ctx context.Context, m *model.Customer) error {
+func (r *customerRepository) UpdateCredit(ctx context.Context, m *model.Customer) error {
 	query := `
 	UPDATE public.customers
 	SET credit = $2

@@ -15,19 +15,24 @@ var (
 	ErrNoOrderID    = errs.ResourceNotFoundError("the order with given id was not found")
 )
 
-type OrderService struct {
+type OrderService interface {
+	CreateOrder(ctx context.Context, req *dto.CreateOrderRequest) (*dto.CreateOrderResponse, error)
+	CancelOrder(ctx context.Context, id int) error
+}
+
+type orderService struct {
 	transactor transactor.Transactor
-	custRepo   *repository.CustomerRepository
-	orderRepo  *repository.OrderRepository
-	notiSvc    *NotificationService
+	custRepo   repository.CustomerRepository
+	orderRepo  repository.OrderRepository
+	notiSvc    NotificationService
 }
 
 func NewOrderService(
 	transactor transactor.Transactor,
-	custRepo *repository.CustomerRepository,
-	orderRepo *repository.OrderRepository,
-	notiSvc *NotificationService) *OrderService {
-	return &OrderService{
+	custRepo repository.CustomerRepository,
+	orderRepo repository.OrderRepository,
+	notiSvc NotificationService) OrderService {
+	return &orderService{
 		transactor: transactor,
 		custRepo:   custRepo,
 		orderRepo:  orderRepo,
@@ -35,21 +40,21 @@ func NewOrderService(
 	}
 }
 
-func (s *OrderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequest) (int, error) {
+func (s *orderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequest) (*dto.CreateOrderResponse, error) {
 	// Business Logic Rule: ตรวจสอบ customer id
 	customer, err := s.custRepo.FindByID(ctx, req.CustomerID)
 	if err != nil {
 		logger.Log.Error(err.Error())
-		return 0, err
+		return nil, err
 	}
 
 	if customer == nil {
-		return 0, ErrNoCustomerID
+		return nil, ErrNoCustomerID
 	}
 
 	// Business Logic Rule: ตัดยอด credit ถ้าไม่พอให้ error
 	if err := customer.ReserveCredit(req.OrderTotal); err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	// ย้ายส่วนที่ติดต่อฐานข้อมูล กับส่งอีเมลมาทำงานใน WithinTransaction
@@ -83,13 +88,15 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequ
 	})
 
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return order.ID, nil
+	// สร้าง DTO Response
+	resp := dto.NewCreateOrderResponse(order.ID)
+	return resp, nil
 }
 
-func (s *OrderService) CancelOrder(ctx context.Context, id int) error {
+func (s *orderService) CancelOrder(ctx context.Context, id int) error {
 	// Business Logic Rule: ตรวจสอบ order id
 	order, err := s.orderRepo.FindByID(ctx, id)
 	if err != nil {

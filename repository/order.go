@@ -10,17 +10,23 @@ import (
 	"time"
 )
 
-type OrderRepository struct {
+type OrderRepository interface {
+	Create(ctx context.Context, order *model.Order) error
+	FindByID(ctx context.Context, id int) (*model.Order, error)
+	Cancel(ctx context.Context, id int) error
+}
+
+type orderRepository struct {
 	dbCtx transactor.DBContext
 }
 
-func NewOrderRepository(dbCtx transactor.DBContext) *OrderRepository {
-	return &OrderRepository{
+func NewOrderRepository(dbCtx transactor.DBContext) OrderRepository {
+	return &orderRepository{
 		dbCtx: dbCtx,
 	}
 }
 
-func (r *OrderRepository) Create(ctx context.Context, m *model.Order) error {
+func (r *orderRepository) Create(ctx context.Context, m *model.Order) error {
 	query := `
 	INSERT INTO public.orders (
 			customer_id, order_total
@@ -39,7 +45,7 @@ func (r *OrderRepository) Create(ctx context.Context, m *model.Order) error {
 	return nil
 }
 
-func (r *OrderRepository) FindByID(ctx context.Context, id int) (*model.Order, error) {
+func (r *orderRepository) FindByID(ctx context.Context, id int) (*model.Order, error) {
 	query := `
 	SELECT *
 	FROM public.orders
@@ -60,7 +66,7 @@ func (r *OrderRepository) FindByID(ctx context.Context, id int) (*model.Order, e
 	return &order, nil
 }
 
-func (r *OrderRepository) Cancel(ctx context.Context, id int) error {
+func (r *orderRepository) Cancel(ctx context.Context, id int) error {
 	query := `
 	UPDATE public.orders
 	SET canceled_at = current_timestamp

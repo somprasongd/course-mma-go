@@ -14,25 +14,29 @@ var (
 	ErrEmailExists = errs.ConflictError("email already exists")
 )
 
-type CustomerService struct {
+type CustomerService interface {
+	CreateCustomer(ctx context.Context, req *dto.CreateCustomerRequest) (*dto.CreateCustomerResponse, error)
+}
+
+type customerService struct {
 	transactor transactor.Transactor
-	custRepo   *repository.CustomerRepository
-	notiSvc    *NotificationService
+	custRepo   repository.CustomerRepository
+	notiSvc    NotificationService
 }
 
 func NewCustomerService(
 	transactor transactor.Transactor,
-	custRepo *repository.CustomerRepository,
-	notiSvc *NotificationService,
-) *CustomerService {
-	return &CustomerService{
+	custRepo repository.CustomerRepository,
+	notiSvc NotificationService,
+) CustomerService {
+	return &customerService{
 		transactor: transactor,
 		custRepo:   custRepo,
 		notiSvc:    notiSvc,
 	}
 }
 
-func (s *CustomerService) CreateCustomer(ctx context.Context, req *dto.CreateCustomerRequest) (*dto.CreateCustomerResponse, error) {
+func (s *customerService) CreateCustomer(ctx context.Context, req *dto.CreateCustomerRequest) (*dto.CreateCustomerResponse, error) {
 	// Business Logic Rule: ตรวจสอบ email ซ้ำ
 	customer, err := s.custRepo.FindByEmail(ctx, req.Email)
 	if err != nil {

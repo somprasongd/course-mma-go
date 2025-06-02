@@ -4,17 +4,17 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"go-mma/data/sqldb"
 	"go-mma/model"
 	"go-mma/util/errs"
+	"go-mma/util/transactor"
 	"time"
 )
 
 type OrderRepository struct {
-	dbCtx sqldb.DBContext
+	dbCtx transactor.DBContext
 }
 
-func NewOrderRepository(dbCtx sqldb.DBContext) *OrderRepository {
+func NewOrderRepository(dbCtx transactor.DBContext) *OrderRepository {
 	return &OrderRepository{
 		dbCtx: dbCtx,
 	}
@@ -32,7 +32,7 @@ func (r *OrderRepository) Create(ctx context.Context, m *model.Order) error {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 
-	err := r.dbCtx.DB().QueryRowxContext(ctx, query, m.CustomerID, m.OrderTotal).StructScan(m)
+	err := r.dbCtx(ctx).QueryRowxContext(ctx, query, m.CustomerID, m.OrderTotal).StructScan(m)
 	if err != nil {
 		return errs.HandleDBError(fmt.Errorf("failed to create order: %w", err))
 	}
@@ -50,7 +50,7 @@ func (r *OrderRepository) FindByID(ctx context.Context, id int) (*model.Order, e
 	defer cancel()
 
 	var order model.Order
-	err := r.dbCtx.DB().QueryRowxContext(ctx, query, id).StructScan(&order)
+	err := r.dbCtx(ctx).QueryRowxContext(ctx, query, id).StructScan(&order)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -68,7 +68,7 @@ func (r *OrderRepository) Cancel(ctx context.Context, id int) error {
 `
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
-	_, err := r.dbCtx.DB().ExecContext(ctx, query, id)
+	_, err := r.dbCtx(ctx).ExecContext(ctx, query, id)
 	if err != nil {
 		return errs.HandleDBError(fmt.Errorf("failed to cancel order: %w", err))
 	}

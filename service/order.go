@@ -7,6 +7,7 @@ import (
 	"go-mma/repository"
 	"go-mma/util/errs"
 	"go-mma/util/logger"
+	"go-mma/util/transactor"
 )
 
 var (
@@ -15,16 +16,22 @@ var (
 )
 
 type OrderService struct {
-	custRepo  *repository.CustomerRepository
-	orderRepo *repository.OrderRepository
-	notiSvc   *NotificationService
+	transactor transactor.Transactor
+	custRepo   *repository.CustomerRepository
+	orderRepo  *repository.OrderRepository
+	notiSvc    *NotificationService
 }
 
-func NewOrderService(custRepo *repository.CustomerRepository, orderRepo *repository.OrderRepository, notiSvc *NotificationService) *OrderService {
+func NewOrderService(
+	transactor transactor.Transactor,
+	custRepo *repository.CustomerRepository,
+	orderRepo *repository.OrderRepository,
+	notiSvc *NotificationService) *OrderService {
 	return &OrderService{
-		custRepo:  custRepo,
-		orderRepo: orderRepo,
-		notiSvc:   notiSvc,
+		transactor: transactor,
+		custRepo:   custRepo,
+		orderRepo:  orderRepo,
+		notiSvc:    notiSvc,
 	}
 }
 
@@ -45,24 +52,39 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequ
 		return 0, err
 	}
 
-	// ตัดยอด credit ในตาราง customer
-	if err := s.custRepo.UpdateCredit(ctx, customer); err != nil {
-		logger.Log.Error(err.Error())
-		return 0, err
-	}
+	// ย้ายส่วนที่ติดต่อฐานข้อมูล กับส่งอีเมลมาทำงานใน WithinTransaction
+	var order *model.Order
+	err = s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
 
-	// สร้าง order ใหม่
-	order := model.NewOrder(req.CustomerID, req.OrderTotal)
-	err = s.orderRepo.Create(ctx, order)
-	if err != nil {
-		logger.Log.Error(err.Error())
-		return 0, err
-	}
+		// ตัดยอด credit ในตาราง customer
+		if err := s.custRepo.UpdateCredit(ctx, customer); err != nil {
+			logger.Log.Error(err.Error())
+			return err
+		}
 
-	s.notiSvc.SendEmail(customer.Email, "Order Created", map[string]any{
-		"order_id": order.ID,
-		"total":    order.OrderTotal,
+		// สร้าง order ใหม่
+		order = model.NewOrder(req.CustomerID, req.OrderTotal)
+		err = s.orderRepo.Create(ctx, order)
+		if err != nil {
+			logger.Log.Error(err.Error())
+			return err
+		}
+
+		err = s.notiSvc.SendEmail(customer.Email, "Order Created", map[string]any{
+			"order_id": order.ID,
+			"total":    order.OrderTotal,
+		})
+		if err != nil {
+			logger.Log.Error(err.Error())
+			return err
+		}
+
+		return nil
 	})
+
+	if err != nil {
+		return 0, err
+	}
 
 	return order.ID, nil
 }

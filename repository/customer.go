@@ -4,19 +4,19 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"go-mma/data/sqldb"
 	"go-mma/model"
 	"go-mma/util/errs"
+	"go-mma/util/transactor"
 	"time"
 )
 
 type CustomerRepository struct {
-	dbCtx sqldb.DBContext // dbCtx is an instance of DBContext interface for interacting with the database
+	dbCtx transactor.DBContext
 }
 
-func NewCustomerRepository(dbCtx sqldb.DBContext) *CustomerRepository {
+func NewCustomerRepository(dbCtx transactor.DBContext) *CustomerRepository {
 	return &CustomerRepository{
-		dbCtx: dbCtx, // Initialize the dbCtx field with the passed DBContext parameter
+		dbCtx: dbCtx,
 	}
 }
 
@@ -31,7 +31,7 @@ RETURNING *
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	err := r.dbCtx.DB().
+	err := r.dbCtx(ctx).
 		QueryRowxContext(ctx, query, customer.Email, customer.Credit).
 		StructScan(customer)
 	if err != nil {
@@ -51,7 +51,7 @@ WHERE email = $1
 	defer cancel()
 
 	customer := &model.Customer{}
-	err := r.dbCtx.DB().
+	err := r.dbCtx(ctx).
 		QueryRowxContext(ctx, query, email).
 		StructScan(customer)
 	if err != nil {
@@ -73,7 +73,7 @@ func (r *CustomerRepository) FindByID(ctx context.Context, id int) (*model.Custo
 	defer cancel()
 
 	var customer model.Customer
-	err := r.dbCtx.DB().QueryRowxContext(ctx, query, id).StructScan(&customer)
+	err := r.dbCtx(ctx).QueryRowxContext(ctx, query, id).StructScan(&customer)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -94,7 +94,7 @@ func (r *CustomerRepository) UpdateCredit(ctx context.Context, m *model.Customer
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 
-	err := r.dbCtx.DB().QueryRowxContext(ctx, query, m.ID, m.Credit).StructScan(m)
+	err := r.dbCtx(ctx).QueryRowxContext(ctx, query, m.ID, m.Credit).StructScan(m)
 	if err != nil {
 		return errs.HandleDBError(fmt.Errorf("failed to update customer credit: %w", err))
 	}

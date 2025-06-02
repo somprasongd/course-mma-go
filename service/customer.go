@@ -6,7 +6,12 @@ import (
 	"go-mma/dto"
 	"go-mma/model"
 	"go-mma/repository"
+	"go-mma/util/errs"
 	"go-mma/util/logger"
+)
+
+var (
+	ErrEmailExists = errs.ConflictError("email already exists")
 )
 
 type CustomerService struct {

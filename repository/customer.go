@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go-mma/data/sqldb"
 	"go-mma/model"
+	"go-mma/util/errs"
 	"time"
 )
 
@@ -34,7 +35,7 @@ RETURNING *
 		QueryRowxContext(ctx, query, customer.Email, customer.Credit).
 		StructScan(customer)
 	if err != nil {
-		return fmt.Errorf("failed to create customer: %w", err) // Return an error if the query execution fails
+		return errs.HandleDBError(fmt.Errorf("failed to create customer: %w", err))
 	}
 	return nil // Return nil if the operation is successful
 }
@@ -57,7 +58,7 @@ WHERE email = $1
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to select customer: %w", err)
+		return nil, errs.HandleDBError(fmt.Errorf("failed to select customer: %w", err))
 	}
 	return customer, nil
 }

@@ -15,11 +15,15 @@ var (
 
 type CustomerService struct {
 	custRepo *repository.CustomerRepository
+	notiSvc  *NotificationService
 }
 
-func NewCustomerService(custRepo *repository.CustomerRepository) *CustomerService {
+func NewCustomerService(custRepo *repository.CustomerRepository,
+	notiSvc *NotificationService,
+) *CustomerService {
 	return &CustomerService{
 		custRepo: custRepo,
+		notiSvc:  notiSvc,
 	}
 }
 
@@ -45,6 +49,11 @@ func (s *CustomerService) CreateCustomer(ctx context.Context, req *dto.CreateCus
 		logger.Log.Error(err.Error())
 		return nil, err
 	}
+
+	// ส่งอีเมลต้อนรับ
+	s.notiSvc.SendEmail(customer.Email, "Welcome to our service!", map[string]any{
+		"message": "Thank you for joining us! We are excited to have you as a member.",
+	})
 
 	// สร้าง DTO Response
 	resp := dto.NewCreateCustomerResponse(customer.ID)

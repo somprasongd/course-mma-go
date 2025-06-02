@@ -62,3 +62,41 @@ WHERE email = $1
 	}
 	return customer, nil
 }
+
+func (r *CustomerRepository) FindByID(ctx context.Context, id int) (*model.Customer, error) {
+	query := `
+	SELECT *
+	FROM public.customers
+	WHERE id = $1
+`
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+
+	var customer model.Customer
+	err := r.dbCtx.DB().QueryRowxContext(ctx, query, id).StructScan(&customer)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, errs.HandleDBError(fmt.Errorf("failed to get customer by ID: %w", err))
+	}
+
+	return &customer, nil
+}
+
+func (r *CustomerRepository) UpdateCredit(ctx context.Context, m *model.Customer) error {
+	query := `
+	UPDATE public.customers
+	SET credit = $2
+	WHERE id = $1
+	RETURNING *
+`
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+
+	err := r.dbCtx.DB().QueryRowxContext(ctx, query, m.ID, m.Credit).StructScan(m)
+	if err != nil {
+		return errs.HandleDBError(fmt.Errorf("failed to update customer credit: %w", err))
+	}
+	return nil
+}

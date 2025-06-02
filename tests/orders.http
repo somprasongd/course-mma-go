@@ -1,12 +1,12 @@
 @host = http://localhost:8090
 @base_url = api/v1/orders
-@order_id = o1
+@order_id = 1
 ### Create Order
 POST {{host}}/{{base_url}} HTTP/1.1
 content-type: application/json
 
 {
-  "customer_id": "1",
+  "customer_id": 1,
   "order_total": 10
 }
 

@@ -1,86 +1,65 @@
 package handler
 
 import (
-	"fmt"
+	"go-mma/dto"
+	"go-mma/service"
+	"go-mma/util/errs"
+	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
 )
 
 type OrderHandler struct {
+	orderSvc *service.OrderService
 }
 
-func NewOrderHandler() *OrderHandler {
-	return &OrderHandler{}
+func NewOrderHandler(orderSvc *service.OrderService) *OrderHandler {
+	return &OrderHandler{orderSvc: orderSvc}
 }
 
 func (h *OrderHandler) CreateOrder(c fiber.Ctx) error {
-	type CreateOrderRequest struct {
-		CustomerID string `json:"customer_id"`
-		OrderTotal int    `json:"order_total"`
-	}
-	payload := CreateOrderRequest{}
-
-	if err := c.Bind().Body(&payload); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	// 1. รับ request body มาเป็น DTO
+	var req dto.CreateOrderRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return errs.InputValidationError(err.Error())
 	}
 
-	fmt.Println("Received Order:", payload)
-
-	// Validate payload fields
-	if payload.CustomerID == "" {
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": "customer_id is required"})
-	}
-	if payload.OrderTotal <= 0 {
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": "order_total must be greater than 0"})
+	// 2. ตรวจสอบความถูกต้อง (validate)
+	if err := req.Validate(); err != nil {
+		return errs.InputValidationError(strings.Join(strings.Split(err.Error(), "\n"), ", "))
 	}
 
-	// TODO: get customer by ID from the database
-	// customer := getCustomer(order.CustomerID)
-	// if customer == nil {
-	// 	return return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "the customer with given id was not found"})
-	// }
+	// 3. ส่งไปที่ Service Layer
+	resp, err := h.orderSvc.CreateOrder(c.Context(), &req)
 
-	// TODO: check credit balance of the customer
-	// if credit < payload.OrderTotal {
-	// 	return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": "insufficient credit"})
-	// }
+	// 4. จัดการ error จาก Service Layer หากเกิดขึ้น
+	if err != nil {
+		return err
+	}
 
-	// TODO: reserve credit for the customer
-
-	// TODO: update customer's credit balance in the database
-
-	// TODO: save new Order to the database
-
-	// Return a created response
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"id": "o1"})
+	// 5. ตอบกลับ client
+	return c.Status(fiber.StatusCreated).JSON(resp)
 }
 
 func (h *OrderHandler) CancelOrder(c fiber.Ctx) error {
-	// Implement the logic to cancel an order
-	orderID := c.Params("orderID")
-	if orderID == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid order id"})
+	// 1. อ่านค่า id จาก path param
+	id := c.Params("orderID")
+
+	// 2. ตรวจสอบรูปแบบ order id
+	orderID, err := strconv.Atoi(id)
+	if err != nil {
+		return errs.InputValidationError("invalid order id")
 	}
 
-	fmt.Println("Cancelling order:", orderID)
+	// 3. ส่งไปที่ Service Layer
+	err = h.orderSvc.CancelOrder(c.Context(), orderID)
 
-	// TODO: get order details from the database
-	// order := getOrder(orderID)
-	// if order == nil {
-	// 	return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "the order with given id was not found"})
-	// }
+	// 4. จัดการ error จาก Service Layer หากเกิดขึ้น
+	if err != nil {
+		return err
+	}
 
-	// TODO: get cutomer details from the database
-	// customer := getCustomer(order.CustomerID)
-	// if customer == nil {
-	// 	return return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "the customer with given id was not found"})
-	// }
-
-	// TODO: release credit limit for the customer
-	// creditLimit += CreateOrderRequest.OrderTotal
-	// TODO: save the customer details to the database
-
-	// TODO: update the order status in the database
-
+	// 5. ตอบกลับ client
 	return c.SendStatus(fiber.StatusNoContent)
 }

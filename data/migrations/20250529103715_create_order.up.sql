@@ -3,7 +3,7 @@ CREATE TABLE public.orders (
 	customer_id int4 NOT NULL,
 	order_total int4 NOT NULL,
 	created_at timestamp DEFAULT CURRENT_TIMESTAMP NULL,
-	canceld_at timestamp NULL,
+	canceled_at timestamp NULL,
 	CONSTRAINT orders_pkey PRIMARY KEY (id),
 	CONSTRAINT fk_customer FOREIGN KEY (customer_id) REFERENCES public.customers(id)
 );

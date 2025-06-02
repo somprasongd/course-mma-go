@@ -76,15 +76,19 @@ func (s *httpServer) RegisterRoutes(db sqldb.DBContext) {
 	customers := v1.Group("/customers")
 	{
 		repo := repository.NewCustomerRepository(db)
-		notiSvc := service.NewNotificationService()
-		svc := service.NewCustomerService(repo, notiSvc)
+		svcNoti := service.NewNotificationService()
+		svc := service.NewCustomerService(repo, svcNoti)
 		hdlr := handler.NewCustomerHandler(svc)
 		customers.Post("", hdlr.CreateCustomer)
 	}
 
 	orders := v1.Group("/orders")
 	{
-		hdlr := handler.NewOrderHandler()
+		repoCust := repository.NewCustomerRepository(db)
+		repoOrder := repository.NewOrderRepository(db)
+		svcNoti := service.NewNotificationService()
+		svcCust := service.NewOrderService(repoCust, repoOrder, svcNoti)
+		hdlr := handler.NewOrderHandler(svcCust)
 		orders.Post("", hdlr.CreateOrder)
 		orders.Delete("/:orderID", hdlr.CancelOrder)
 	}

@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"go-mma/dto"
 	"go-mma/model"
 	"go-mma/repository"
@@ -34,7 +33,7 @@ func (s *CustomerService) CreateCustomer(ctx context.Context, req *dto.CreateCus
 	}
 
 	if customer != nil {
-		return nil, errors.New("email already exists")
+		return nil, ErrEmailExists
 	}
 
 	// แปลง DTO → Model

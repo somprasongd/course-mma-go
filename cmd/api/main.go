@@ -12,17 +12,22 @@ import (
 )
 
 func main() {
-	logger.Init()
-	defer logger.Log.Sync() // Ensure logs are written before exit
+	closeLog, err := logger.Init()
+	if err != nil {
+		panic(err.Error())
+	}
+	defer closeLog()
 
 	config, err := config.Load()
 	if err != nil {
 		logger.Log.Panic(err.Error())
 	}
+
 	db, closeDB, err := sqldb.New(config.DSN)
 	if err != nil {
 		logger.Log.Panic(err.Error())
 	}
+
 	defer func() {
 		if err := closeDB(); err != nil {
 			logger.Log.Error(fmt.Sprintf("Error closing database: %v", err))

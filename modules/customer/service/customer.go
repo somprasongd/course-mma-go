@@ -13,11 +13,16 @@ import (
 )
 
 var (
-	ErrEmailExists = errs.ConflictError("email already exists")
+	ErrEmailExists                  = errs.ConflictError("email already exists")
+	ErrCustomerNotFound             = errs.ResourceNotFoundError("the customer with given id was not found")
+	ErrOrderTotalExceedsCreditLimit = errs.BusinessRuleError("order total exceeds credit limit")
 )
 
 type CustomerService interface {
 	CreateCustomer(ctx context.Context, req *dto.CreateCustomerRequest) (*dto.CreateCustomerResponse, error)
+	GetCustomerByID(ctx context.Context, id int) (*dto.Customer, error)
+	ReserveCredit(ctx context.Context, id int, amount int) error
+	ReleaseCredit(ctx context.Context, id int, amount int) error
 }
 
 type customerService struct {
@@ -83,4 +88,68 @@ func (s *customerService) CreateCustomer(ctx context.Context, req *dto.CreateCus
 	// สร้าง DTO Response
 	resp := dto.NewCreateCustomerResponse(customer.ID)
 	return resp, nil
+}
+
+func (s *customerService) GetCustomerByID(ctx context.Context, id int) (*dto.Customer, error) {
+	customer, err := s.custRepo.FindByID(ctx, id)
+	if err != nil {
+		// error logging
+		logger.Log.Error(err.Error())
+		return nil, err
+	}
+
+	if customer == nil {
+		return nil, ErrCustomerNotFound
+	}
+
+	// สร้าง DTO Response
+	return &dto.Customer{
+		ID:     customer.ID,
+		Email:  customer.Email,
+		Credit: customer.Credit,
+	}, nil
+}
+
+func (s *customerService) ReserveCredit(ctx context.Context, id int, amount int) error {
+	customer, err := s.custRepo.FindByID(ctx, id)
+	if err != nil {
+		logger.Log.Error(err.Error())
+		return err
+	}
+
+	if customer == nil {
+		return ErrCustomerNotFound
+	}
+
+	if err := customer.ReserveCredit(amount); err != nil {
+		return ErrOrderTotalExceedsCreditLimit
+	}
+
+	if err := s.custRepo.UpdateCredit(ctx, customer); err != nil {
+		logger.Log.Error(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (s *customerService) ReleaseCredit(ctx context.Context, id int, amount int) error {
+	customer, err := s.custRepo.FindByID(ctx, id)
+	if err != nil {
+		logger.Log.Error(err.Error())
+		return err
+	}
+
+	if customer == nil {
+		return ErrCustomerNotFound
+	}
+
+	customer.ReleaseCredit(amount)
+
+	if err := s.custRepo.UpdateCredit(ctx, customer); err != nil {
+		logger.Log.Error(err.Error())
+		return err
+	}
+
+	return nil
 }

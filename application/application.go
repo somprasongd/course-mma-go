@@ -5,6 +5,7 @@ import (
 	"go-mma/config"
 	"go-mma/data/sqldb"
 	"go-mma/util/logger"
+	"go-mma/util/module"
 )
 
 type Application struct {
@@ -38,6 +39,13 @@ func (app *Application) Shutdown() error {
 	return nil
 }
 
-func (app *Application) RegisterRoutes() {
-	app.httpServer.RegisterRoutes(app.db)
+func (app *Application) RegisterModules(modules []module.Module) {
+	for _, m := range modules {
+		groupPrefix := "/api"
+		if len(m.APIVersion()) > 0 {
+			groupPrefix = fmt.Sprintf("/api/%s", m.APIVersion())
+		}
+		group := app.httpServer.Group(groupPrefix)
+		m.RegisterRoutes(group)
+	}
 }

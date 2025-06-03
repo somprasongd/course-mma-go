@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"go-mma/dto"
-	"go-mma/service"
+	"go-mma/modules/order/dto"
+	"go-mma/modules/order/service"
 	"go-mma/util/errs"
 	"strconv"
 	"strings"

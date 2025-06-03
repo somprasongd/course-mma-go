@@ -2,12 +2,15 @@ package service
 
 import (
 	"context"
-	"go-mma/dto"
-	"go-mma/model"
-	"go-mma/repository"
+	"go-mma/modules/order/dto"
+	"go-mma/modules/order/model"
+	"go-mma/modules/order/repository"
 	"go-mma/util/errs"
 	"go-mma/util/logger"
 	"go-mma/util/transactor"
+
+	custRepository "go-mma/modules/customer/repository"
+	notiService "go-mma/modules/notification/service"
 )
 
 var (
@@ -22,16 +25,16 @@ type OrderService interface {
 
 type orderService struct {
 	transactor transactor.Transactor
-	custRepo   repository.CustomerRepository
+	custRepo   custRepository.CustomerRepository
 	orderRepo  repository.OrderRepository
-	notiSvc    NotificationService
+	notiSvc    notiService.NotificationService
 }
 
 func NewOrderService(
 	transactor transactor.Transactor,
-	custRepo repository.CustomerRepository,
+	custRepo custRepository.CustomerRepository,
 	orderRepo repository.OrderRepository,
-	notiSvc NotificationService) OrderService {
+	notiSvc notiService.NotificationService) OrderService {
 	return &orderService{
 		transactor: transactor,
 		custRepo:   custRepo,

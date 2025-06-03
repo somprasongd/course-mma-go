@@ -5,12 +5,7 @@ import (
 	"fmt"
 	"go-mma/application/middleware"
 	"go-mma/config"
-	"go-mma/data/sqldb"
-	"go-mma/handler"
-	"go-mma/repository"
-	"go-mma/service"
 	"go-mma/util/logger"
-	"go-mma/util/transactor"
 	"net/http"
 
 	"github.com/gofiber/fiber/v3"
@@ -22,7 +17,8 @@ import (
 type HTTPServer interface {
 	Start()
 	Shutdown() error
-	RegisterRoutes(db sqldb.DBContext)
+	Router() *fiber.App
+	Group(prefix string) fiber.Router
 }
 
 type httpServer struct {
@@ -71,27 +67,6 @@ func (s *httpServer) Router() *fiber.App {
 	return s.app
 }
 
-func (s *httpServer) RegisterRoutes(db sqldb.DBContext) {
-	v1 := s.app.Group("/api/v1")
-
-	transactor, dbCtx := transactor.New(db.DB())
-	customers := v1.Group("/customers")
-	{
-		repo := repository.NewCustomerRepository(dbCtx)
-		svcNoti := service.NewNotificationService()
-		svc := service.NewCustomerService(transactor, repo, svcNoti)
-		hdlr := handler.NewCustomerHandler(svc)
-		customers.Post("", hdlr.CreateCustomer)
-	}
-
-	orders := v1.Group("/orders")
-	{
-		repoCust := repository.NewCustomerRepository(dbCtx)
-		repoOrder := repository.NewOrderRepository(dbCtx)
-		svcNoti := service.NewNotificationService()
-		svcCust := service.NewOrderService(transactor, repoCust, repoOrder, svcNoti)
-		hdlr := handler.NewOrderHandler(svcCust)
-		orders.Post("", hdlr.CreateOrder)
-		orders.Delete("/:orderID", hdlr.CancelOrder)
-	}
+func (s *httpServer) Group(prefix string) fiber.Router {
+	return s.app.Group(prefix)
 }

@@ -5,7 +5,12 @@ import (
 	"go-mma/application"
 	"go-mma/config"
 	"go-mma/data/sqldb"
+	"go-mma/modules/customer"
+	"go-mma/modules/notification"
+	"go-mma/modules/order"
 	"go-mma/util/logger"
+	"go-mma/util/module"
+	"go-mma/util/transactor"
 	"os"
 	"os/signal"
 	"syscall"
@@ -34,8 +39,17 @@ func main() {
 		}
 	}()
 
+	transactor, dbCtx := transactor.New(db.DB())
+
 	app := application.New(*config, db)
-	app.RegisterRoutes()
+
+	mCtx := module.NewModuleContext(transactor, dbCtx)
+	app.RegisterModules([]module.Module{
+		notification.NewModule(mCtx),
+		customer.NewModule(mCtx),
+		order.NewModule(mCtx),
+	})
+
 	app.Run()
 
 	// Wait for shutdown signal

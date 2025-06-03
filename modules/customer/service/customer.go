@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
-	"go-mma/dto"
-	"go-mma/model"
-	"go-mma/repository"
+	"go-mma/modules/customer/dto"
+	"go-mma/modules/customer/model"
+	"go-mma/modules/customer/repository"
 	"go-mma/util/errs"
 	"go-mma/util/logger"
 	"go-mma/util/transactor"
+
+	notiService "go-mma/modules/notification/service"
 )
 
 var (
@@ -21,13 +23,13 @@ type CustomerService interface {
 type customerService struct {
 	transactor transactor.Transactor
 	custRepo   repository.CustomerRepository
-	notiSvc    NotificationService
+	notiSvc    notiService.NotificationService
 }
 
 func NewCustomerService(
 	transactor transactor.Transactor,
 	custRepo repository.CustomerRepository,
-	notiSvc NotificationService,
+	notiSvc notiService.NotificationService,
 ) CustomerService {
 	return &customerService{
 		transactor: transactor,

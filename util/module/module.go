@@ -1,6 +1,7 @@
 package module
 
 import (
+	"go-mma/util/registry"
 	"go-mma/util/transactor"
 
 	"github.com/gofiber/fiber/v3"
@@ -8,6 +9,7 @@ import (
 
 type Module interface {
 	APIVersion() string
+	Init(reg registry.ServiceRegistry) error
 	RegisterRoutes(r fiber.Router)
 }
 

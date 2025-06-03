@@ -46,7 +46,6 @@ func (s *orderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequ
 	// Business Logic Rule: ตรวจสอบ customer id
 	customer, err := s.custSvc.GetCustomerByID(ctx, req.CustomerID)
 	if err != nil {
-		logger.Log.Error(err.Error())
 		return nil, err
 	}
 
@@ -56,7 +55,6 @@ func (s *orderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequ
 
 		// ตัดยอด credit ในตาราง customer
 		if err := s.custSvc.ReserveCredit(ctx, customer.ID, req.OrderTotal); err != nil {
-			logger.Log.Error(err.Error())
 			return err
 		}
 
@@ -112,7 +110,6 @@ func (s *orderService) CancelOrder(ctx context.Context, id int) error {
 		// Business Logic: คืนยอด credit
 		err := s.custSvc.ReleaseCredit(ctx, order.CustomerID, order.OrderTotal)
 		if err != nil {
-			logger.Log.Error(err.Error())
 			return err
 		}
 

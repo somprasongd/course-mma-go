@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"go-mma/application"
 	"go-mma/config"
-	"go-mma/data/sqldb"
 	"go-mma/modules/customer"
 	"go-mma/modules/notification"
 	"go-mma/modules/order"
 	"go-mma/util/logger"
 	"go-mma/util/module"
-	"go-mma/util/transactor"
+	"go-mma/util/storage/sqldb"
+	"go-mma/util/storage/sqldb/transactor"
 	"os"
 	"os/signal"
 	"syscall"
@@ -39,16 +39,18 @@ func main() {
 		}
 	}()
 
+	app := application.New(*config)
+
 	transactor, dbCtx := transactor.New(db.DB())
-
-	app := application.New(*config, db)
-
 	mCtx := module.NewModuleContext(transactor, dbCtx)
-	app.RegisterModules([]module.Module{
+	err = app.RegisterModules(
 		notification.NewModule(mCtx),
 		customer.NewModule(mCtx),
 		order.NewModule(mCtx),
-	})
+	)
+	if err != nil {
+		logger.Log.Fatal(fmt.Sprintf("Error initializing module: %v", err))
+	}
 
 	app.Run()
 

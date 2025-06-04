@@ -3,7 +3,6 @@ package application
 import (
 	"fmt"
 	"go-mma/config"
-	"go-mma/data/sqldb"
 	"go-mma/util/logger"
 	"go-mma/util/module"
 	"go-mma/util/registry"
@@ -15,7 +14,7 @@ type Application struct {
 	serviceRegistry registry.ServiceRegistry
 }
 
-func New(config config.Config, db sqldb.DBContext) *Application {
+func New(config config.Config) *Application {
 	return &Application{
 		config:          config,
 		httpServer:      newHTTPServer(config),
@@ -40,19 +39,42 @@ func (app *Application) Shutdown() error {
 	return nil
 }
 
-func (app *Application) RegisterModules(modules []module.Module) {
+func (app *Application) RegisterModules(modules ...module.Module) error {
 	for _, m := range modules {
 		// Initialize each module
-		if err := m.Init(app.serviceRegistry); err != nil {
-			logger.Log.Fatal(fmt.Sprintf("module initialization error: %v", err))
+		if err := app.initModule(m); err != nil {
+			return fmt.Errorf("failed to init module [%T]: %w", m, err)
+		}
+
+		// ถ้าโมดูลเป็น ServiceProvider ให้เอา service มาลง registry
+		if sp, ok := m.(module.ServiceProvider); ok {
+			for _, p := range sp.Services() {
+				app.serviceRegistry.Register(p.Key, p.Value)
+			}
 		}
 
 		// Register routes for each module
-		groupPrefix := "/api"
-		if len(m.APIVersion()) > 0 {
-			groupPrefix = fmt.Sprintf("/api/%s", m.APIVersion())
-		}
-		group := app.httpServer.Group(groupPrefix)
-		m.RegisterRoutes(group)
+		app.registerModuleRoutes(m)
 	}
+
+	return nil
+}
+
+func (app *Application) initModule(m module.Module) error {
+	return m.Init(app.serviceRegistry)
+}
+
+func (app *Application) registerModuleRoutes(m module.Module) {
+	prefix := app.buildGroupPrefix(m)
+	group := app.httpServer.Group(prefix)
+	m.RegisterRoutes(group)
+}
+
+func (app *Application) buildGroupPrefix(m module.Module) string {
+	apiBase := "/api"
+	version := m.APIVersion()
+	if version != "" {
+		return fmt.Sprintf("%s/%s", apiBase, version)
+	}
+	return apiBase
 }

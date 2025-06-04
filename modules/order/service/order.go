@@ -7,7 +7,7 @@ import (
 	"go-mma/modules/order/repository"
 	"go-mma/util/errs"
 	"go-mma/util/logger"
-	"go-mma/util/transactor"
+	"go-mma/util/storage/sqldb/transactor"
 
 	custService "go-mma/modules/customer/service"
 	notiService "go-mma/modules/notification/service"

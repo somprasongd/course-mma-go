@@ -17,7 +17,6 @@ import (
 type HTTPServer interface {
 	Start()
 	Shutdown() error
-	Router() *fiber.App
 	Group(prefix string) fiber.Router
 }
 
@@ -61,10 +60,6 @@ func (s *httpServer) Shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), s.config.GracefulTimeout)
 	defer cancel()
 	return s.app.ShutdownWithContext(ctx)
-}
-
-func (s *httpServer) Router() *fiber.App {
-	return s.app
 }
 
 func (s *httpServer) Group(prefix string) fiber.Router {

@@ -28,9 +28,13 @@ func (m *moduleImp) APIVersion() string {
 func (m *moduleImp) Init(reg registry.ServiceRegistry) error {
 	m.notiSvc = service.NewNotificationService()
 
-	reg.Register(NotificationServiceKey, m.notiSvc)
-
 	return nil
+}
+
+func (m *moduleImp) Services() []registry.ProvidedService {
+	return []registry.ProvidedService{
+		{Key: NotificationServiceKey, Value: m.notiSvc},
+	}
 }
 
 func (m *moduleImp) RegisterRoutes(router fiber.Router) {

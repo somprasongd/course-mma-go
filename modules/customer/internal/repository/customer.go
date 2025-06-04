@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"go-mma/modules/customer/internal/model"
 	"go-mma/util/errs"
-	"go-mma/util/transactor"
+	"go-mma/util/storage/sqldb/transactor"
 	"time"
 )
 

@@ -15,10 +15,6 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
-const (
-	OrderServiceKey registry.ServiceKey = "OrderService"
-)
-
 func NewModule(mCtx *module.ModuleContext) module.Module {
 	return &moduleImp{mCtx: mCtx}
 }
@@ -48,7 +44,6 @@ func (m *moduleImp) Init(reg registry.ServiceRegistry) error {
 	repo := repository.NewOrderRepository(m.mCtx.DBCtx)
 	m.orderSvc = service.NewOrderService(m.mCtx.Transactor, custSvc, repo, notiSvc)
 
-	reg.Register(OrderServiceKey, m.orderSvc)
 	return nil
 }
 

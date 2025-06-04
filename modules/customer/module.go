@@ -40,9 +40,13 @@ func (m *moduleImp) Init(reg registry.ServiceRegistry) error {
 	repo := repository.NewCustomerRepository(m.mCtx.DBCtx)
 	m.custSvc = service.NewCustomerService(m.mCtx.Transactor, repo, notiSvc)
 
-	reg.Register(CustomerServiceKey, m.custSvc)
-
 	return nil
+}
+
+func (m *moduleImp) Services() []registry.ProvidedService {
+	return []registry.ProvidedService{
+		{Key: CustomerServiceKey, Value: m.custSvc},
+	}
 }
 
 func (m *moduleImp) RegisterRoutes(router fiber.Router) {

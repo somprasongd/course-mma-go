@@ -3,6 +3,7 @@ export
 
 .PHONY: run
 run:
+	cd src/app && \
 	go run cmd/api/main.go
 
 .PHONY: devup

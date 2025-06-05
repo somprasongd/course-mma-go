@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+
 	"go-mma/modules/customer/dto"
 	"go-mma/modules/customer/internal/model"
 	"go-mma/modules/customer/internal/repository"
 	"go-mma/shared/common/errs"
 	"go-mma/shared/common/logger"
 	"go-mma/shared/common/storage/sqldb/transactor"
+	"go-mma/shared/contract/customercontract"
 
 	notiService "go-mma/modules/notification/service"
 )
@@ -20,9 +22,7 @@ var (
 
 type CustomerService interface {
 	CreateCustomer(ctx context.Context, req *dto.CreateCustomerRequest) (*dto.CreateCustomerResponse, error)
-	GetCustomerByID(ctx context.Context, id int) (*dto.Customer, error)
-	ReserveCredit(ctx context.Context, id int, amount int) error
-	ReleaseCredit(ctx context.Context, id int, amount int) error
+	customercontract.CreditManager
 }
 
 type customerService struct {
@@ -90,7 +90,7 @@ func (s *customerService) CreateCustomer(ctx context.Context, req *dto.CreateCus
 	return resp, nil
 }
 
-func (s *customerService) GetCustomerByID(ctx context.Context, id int) (*dto.Customer, error) {
+func (s *customerService) GetCustomerByID(ctx context.Context, id int) (*customercontract.CustomerInfo, error) {
 	customer, err := s.custRepo.FindByID(ctx, id)
 	if err != nil {
 		// error logging
@@ -103,7 +103,7 @@ func (s *customerService) GetCustomerByID(ctx context.Context, id int) (*dto.Cus
 	}
 
 	// สร้าง DTO Response
-	return &dto.Customer{
+	return &customercontract.CustomerInfo{
 		ID:     customer.ID,
 		Email:  customer.Email,
 		Credit: customer.Credit,

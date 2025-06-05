@@ -8,8 +8,8 @@ import (
 	"go-mma/shared/common/errs"
 	"go-mma/shared/common/logger"
 	"go-mma/shared/common/storage/sqldb/transactor"
+	"go-mma/shared/contract/customercontract"
 
-	custService "go-mma/modules/customer/service"
 	notiService "go-mma/modules/notification/service"
 )
 
@@ -24,14 +24,14 @@ type OrderService interface {
 
 type orderService struct {
 	transactor transactor.Transactor
-	custSvc    custService.CustomerService
+	custSvc    customercontract.CreditManager
 	orderRepo  repository.OrderRepository
 	notiSvc    notiService.NotificationService
 }
 
 func NewOrderService(
 	transactor transactor.Transactor,
-	custSvc custService.CustomerService,
+	custSvc customercontract.CreditManager,
 	orderRepo repository.OrderRepository,
 	notiSvc notiService.NotificationService) OrderService {
 	return &orderService{

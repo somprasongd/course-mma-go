@@ -12,7 +12,7 @@ import (
 
 type CustomerRepository interface {
 	Create(ctx context.Context, customer *model.Customer) error
-	FindByEmail(ctx context.Context, email string) (*model.Customer, error)
+	ExistsByEmail(ctx context.Context, email string) (bool, error)
 	FindByID(ctx context.Context, id int) (*model.Customer, error)
 	UpdateCredit(ctx context.Context, customer *model.Customer) error
 }
@@ -47,27 +47,28 @@ RETURNING *
 	return nil // Return nil if the operation is successful
 }
 
-func (r *customerRepository) FindByEmail(ctx context.Context, email string) (*model.Customer, error) {
+func (r *customerRepository) ExistsByEmail(ctx context.Context, email string) (bool, error) {
 	query := `
-SELECT id, email, credit, created_at, updated_at
-FROM public.customers
-WHERE email = $1
-`
+	SELECT 1
+	FROM public.customers
+	WHERE email = $1
+	LIMIT 1
+	`
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	customer := &model.Customer{}
+	var exists int
 	err := r.dbCtx(ctx).
 		QueryRowxContext(ctx, query, email).
-		StructScan(customer)
+		Scan(&exists)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return false, nil
 		}
-		return nil, errs.HandleDBError(fmt.Errorf("failed to select customer: %w", err))
+		return false, errs.HandleDBError(fmt.Errorf("failed to select customer: %w", err))
 	}
-	return customer, nil
+	return true, nil
 }
 
 func (r *customerRepository) FindByID(ctx context.Context, id int) (*model.Customer, error) {

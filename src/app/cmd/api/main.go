@@ -41,7 +41,10 @@ func main() {
 
 	app := application.New(*config)
 
-	transactor, dbCtx := transactor.New(db.DB())
+	transactor, dbCtx := transactor.New(
+		db.DB(),
+		transactor.WithNestedTransactionStrategy(transactor.NestedTransactionsSavepoints),
+	)
 	mCtx := module.NewModuleContext(transactor, dbCtx)
 	err = app.RegisterModules(
 		notification.NewModule(mCtx),

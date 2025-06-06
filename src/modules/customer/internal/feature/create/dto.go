@@ -1,4 +1,4 @@
-package dto
+package create
 
 import (
 	"errors"
@@ -22,4 +22,8 @@ func (r *CreateCustomerRequest) Validate() error {
 		errs = errors.Join(errs, errors.New("credit must be greater than 0"))
 	}
 	return errs
+}
+
+type CreateCustomerResponse struct {
+	ID int `json:"id"`
 }

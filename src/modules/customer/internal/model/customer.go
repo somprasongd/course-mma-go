@@ -1,7 +1,7 @@
 package model
 
 import (
-	"go-mma/shared/common/errs"
+	"go-mma/modules/customer/domainerrors"
 	"time"
 )
 
@@ -23,7 +23,7 @@ func NewCustomer(email string, credit int) *Customer {
 func (c *Customer) ReserveCredit(v int) error {
 	newCredit := c.Credit - v
 	if newCredit < 0 {
-		return errs.BusinessRuleError("insufficient credit limit")
+		return domainerrors.ErrInsufficientCredit
 	}
 	c.Credit = newCredit
 	return nil

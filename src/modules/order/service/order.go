@@ -7,6 +7,7 @@ import (
 	"go-mma/modules/order/internal/repository"
 	"go-mma/shared/common/errs"
 	"go-mma/shared/common/logger"
+	"go-mma/shared/common/mediator"
 	"go-mma/shared/common/storage/sqldb/transactor"
 	"go-mma/shared/contract/customercontract"
 
@@ -24,27 +25,28 @@ type OrderService interface {
 
 type orderService struct {
 	transactor transactor.Transactor
-	custSvc    customercontract.CreditManager
 	orderRepo  repository.OrderRepository
 	notiSvc    notiService.NotificationService
 }
 
 func NewOrderService(
 	transactor transactor.Transactor,
-	custSvc customercontract.CreditManager,
 	orderRepo repository.OrderRepository,
 	notiSvc notiService.NotificationService) OrderService {
 	return &orderService{
 		transactor: transactor,
-		custSvc:    custSvc,
-		orderRepo:  orderRepo,
-		notiSvc:    notiSvc,
+		// custSvc:    custSvc,
+		orderRepo: orderRepo,
+		notiSvc:   notiSvc,
 	}
 }
 
 func (s *orderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequest) (*dto.CreateOrderResponse, error) {
 	// Business Logic Rule: ตรวจสอบ customer id
-	customer, err := s.custSvc.GetCustomerByID(ctx, req.CustomerID)
+	customer, err := mediator.Send[*customercontract.GetCustomerByIDQuery, *customercontract.GetCustomerByIDQueryResult](
+		ctx,
+		&customercontract.GetCustomerByIDQuery{ID: req.CustomerID},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +56,10 @@ func (s *orderService) CreateOrder(ctx context.Context, req *dto.CreateOrderRequ
 	err = s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
 
 		// ตัดยอด credit ในตาราง customer
-		if err := s.custSvc.ReserveCredit(ctx, customer.ID, req.OrderTotal); err != nil {
+		if _, err := mediator.Send[*customercontract.ReserveCreditCommand, *mediator.NoResponse](
+			ctx,
+			&customercontract.ReserveCreditCommand{CustomerID: req.CustomerID, CreditAmount: req.OrderTotal},
+		); err != nil {
 			return err
 		}
 
@@ -108,8 +113,13 @@ func (s *orderService) CancelOrder(ctx context.Context, id int) error {
 		}
 
 		// Business Logic: คืนยอด credit
-		err := s.custSvc.ReleaseCredit(ctx, order.CustomerID, order.OrderTotal)
-		if err != nil {
+		if _, err = mediator.Send[*customercontract.ReleaseCreditCommand, *mediator.NoResponse](
+			ctx,
+			&customercontract.ReleaseCreditCommand{
+				CustomerID:   order.CustomerID,
+				CreditAmount: order.OrderTotal,
+			},
+		); err != nil {
 			return err
 		}
 

@@ -1,12 +1,14 @@
 package customer
 
 import (
-	"go-mma/modules/customer/handler"
+	"go-mma/modules/customer/internal/feature/create"
+	getbyid "go-mma/modules/customer/internal/feature/get-by-id"
+	releasecredit "go-mma/modules/customer/internal/feature/release-credit"
+	reservecredit "go-mma/modules/customer/internal/feature/reserve-credit"
 	"go-mma/modules/customer/internal/repository"
-	"go-mma/modules/customer/service"
+	"go-mma/shared/common/mediator"
 	"go-mma/shared/common/module"
 	"go-mma/shared/common/registry"
-	"go-mma/shared/contract/customercontract"
 
 	notiModule "go-mma/modules/notification"
 	notiService "go-mma/modules/notification/service"
@@ -19,8 +21,7 @@ func NewModule(mCtx *module.ModuleContext) module.Module {
 }
 
 type moduleImp struct {
-	mCtx    *module.ModuleContext
-	custSvc service.CustomerService
+	mCtx *module.ModuleContext
 }
 
 func (m *moduleImp) APIVersion() string {
@@ -35,21 +36,16 @@ func (m *moduleImp) Init(reg registry.ServiceRegistry) error {
 	}
 
 	repo := repository.NewCustomerRepository(m.mCtx.DBCtx)
-	m.custSvc = service.NewCustomerService(m.mCtx.Transactor, repo, notiSvc)
+
+	mediator.Register(create.NewCreateCustomerCommandHandler(m.mCtx.Transactor, repo, notiSvc))
+	mediator.Register(getbyid.NewGetCustomerByIDQueryHandler(repo))
+	mediator.Register(reservecredit.NewReserveCreditCommandHandler(m.mCtx.Transactor, repo))
+	mediator.Register(releasecredit.NewReleaseCreditCommandHandler(m.mCtx.Transactor, repo))
 
 	return nil
 }
 
-func (m *moduleImp) Services() []registry.ProvidedService {
-	return []registry.ProvidedService{
-		{Key: customercontract.CreditManagerKey, Value: m.custSvc},
-	}
-}
-
 func (m *moduleImp) RegisterRoutes(router fiber.Router) {
-	// wiring dependencies
-	hdl := handler.NewCustomerHandler(m.custSvc)
-
 	customers := router.Group("/customers")
-	customers.Post("", hdl.CreateCustomer)
+	create.NewEndpoint(customers, "")
 }

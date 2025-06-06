@@ -1,4 +1,4 @@
-package dto
+package create
 
 import "fmt"
 
@@ -15,4 +15,8 @@ func (r *CreateOrderRequest) Validate() error {
 		return fmt.Errorf("order_total must be greater than 0")
 	}
 	return nil
+}
+
+type CreateOrderResponse struct {
+	ID int `json:"id"`
 }

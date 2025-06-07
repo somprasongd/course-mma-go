@@ -1,5 +1,5 @@
 CREATE TABLE public.customers (
-	id serial4 NOT NULL,
+	id BIGINT NOT NULL,
 	email text NOT NULL,
 	credit int4 NOT NULL,
 	created_at timestamp DEFAULT CURRENT_TIMESTAMP NULL,

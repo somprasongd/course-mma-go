@@ -9,10 +9,10 @@ import (
 )
 
 func NewEndpoint(router fiber.Router, path string) {
-	router.Post(path, createCustomerHTTPHandler)
+	router.Delete(path, cancelOrderHTTPHandler)
 }
 
-func createCustomerHTTPHandler(c fiber.Ctx) error {
+func cancelOrderHTTPHandler(c fiber.Ctx) error {
 	// 1. อ่านค่า id จาก path param
 	id := c.Params("orderID")
 
@@ -25,7 +25,7 @@ func createCustomerHTTPHandler(c fiber.Ctx) error {
 	// 3. ส่งไปที่ Command Handler
 	_, err = mediator.Send[*CancelOrderCommand, *mediator.NoResponse](
 		c.Context(),
-		&CancelOrderCommand{ID: orderID},
+		&CancelOrderCommand{ID: int64(orderID)},
 	)
 
 	// 4. จัดการ error จาก feature หากเกิดขึ้น

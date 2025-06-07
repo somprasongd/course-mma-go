@@ -3,8 +3,8 @@ package create
 import "fmt"
 
 type CreateOrderRequest struct {
-	CustomerID int `json:"customer_id"`
-	OrderTotal int `json:"order_total"`
+	CustomerID int64 `json:"customer_id"`
+	OrderTotal int   `json:"order_total"`
 }
 
 func (r *CreateOrderRequest) Validate() error {
@@ -18,5 +18,5 @@ func (r *CreateOrderRequest) Validate() error {
 }
 
 type CreateOrderResponse struct {
-	ID int `json:"id"`
+	ID int64 `json:"id"`
 }

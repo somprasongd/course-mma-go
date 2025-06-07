@@ -1,11 +1,11 @@
 package customercontract
 
 type GetCustomerByIDQuery struct {
-	ID int `json:"id"`
+	ID int64 `json:"id"`
 }
 
 type GetCustomerByIDQueryResult struct {
-	ID     int    `json:"id"`
+	ID     int64  `json:"id"`
 	Email  string `json:"email"`
 	Credit int    `json:"credit"`
 }

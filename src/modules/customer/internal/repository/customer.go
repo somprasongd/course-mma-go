@@ -13,7 +13,7 @@ import (
 type CustomerRepository interface {
 	Create(ctx context.Context, customer *model.Customer) error
 	ExistsByEmail(ctx context.Context, email string) (bool, error)
-	FindByID(ctx context.Context, id int) (*model.Customer, error)
+	FindByID(ctx context.Context, id int64) (*model.Customer, error)
 	UpdateCredit(ctx context.Context, customer *model.Customer) error
 }
 
@@ -29,8 +29,8 @@ func NewCustomerRepository(dbCtx transactor.DBContext) CustomerRepository {
 
 func (r *customerRepository) Create(ctx context.Context, customer *model.Customer) error {
 	query := `
-INSERT INTO public.customers (email, credit)
-VALUES ($1, $2)
+INSERT INTO public.customers (id, email, credit)
+VALUES ($1, $2, $3)
 RETURNING *
 `
 
@@ -39,7 +39,7 @@ RETURNING *
 	defer cancel()
 
 	err := r.dbCtx(ctx).
-		QueryRowxContext(ctx, query, customer.Email, customer.Credit).
+		QueryRowxContext(ctx, query, customer.ID, customer.Email, customer.Credit).
 		StructScan(customer)
 	if err != nil {
 		return errs.HandleDBError(fmt.Errorf("failed to create customer: %w", err))
@@ -71,7 +71,7 @@ func (r *customerRepository) ExistsByEmail(ctx context.Context, email string) (b
 	return true, nil
 }
 
-func (r *customerRepository) FindByID(ctx context.Context, id int) (*model.Customer, error) {
+func (r *customerRepository) FindByID(ctx context.Context, id int64) (*model.Customer, error) {
 	query := `
 	SELECT *
 	FROM public.customers

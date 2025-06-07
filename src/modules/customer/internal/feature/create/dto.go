@@ -25,5 +25,5 @@ func (r *CreateCustomerRequest) Validate() error {
 }
 
 type CreateCustomerResponse struct {
-	ID int `json:"id"`
+	ID int64 `json:"id"`
 }

@@ -1,11 +1,14 @@
 package customer
 
 import (
+	"go-mma/modules/customer/internal/domain/event"
+	"go-mma/modules/customer/internal/domain/eventhandler"
 	"go-mma/modules/customer/internal/feature/create"
 	getbyid "go-mma/modules/customer/internal/feature/get-by-id"
 	releasecredit "go-mma/modules/customer/internal/feature/release-credit"
 	reservecredit "go-mma/modules/customer/internal/feature/reserve-credit"
 	"go-mma/modules/customer/internal/repository"
+	"go-mma/shared/common/domain"
 	"go-mma/shared/common/mediator"
 	"go-mma/shared/common/module"
 	"go-mma/shared/common/registry"
@@ -35,9 +38,13 @@ func (m *moduleImp) Init(reg registry.ServiceRegistry) error {
 		return err
 	}
 
+	// Register domain event handlerAdd commentMore actions
+	dispatcher := domain.NewSimpleDomainEventDispatcher()
+	dispatcher.Register(event.CustomerCreatedDomainEventType, eventhandler.NewCustomerCreatedDomainEventHandler(notiSvc))
+
 	repo := repository.NewCustomerRepository(m.mCtx.DBCtx)
 
-	mediator.Register(create.NewCreateCustomerCommandHandler(m.mCtx.Transactor, repo, notiSvc))
+	mediator.Register(create.NewCreateCustomerCommandHandler(m.mCtx.Transactor, repo, dispatcher))
 	mediator.Register(getbyid.NewGetCustomerByIDQueryHandler(repo))
 	mediator.Register(reservecredit.NewReserveCreditCommandHandler(m.mCtx.Transactor, repo))
 	mediator.Register(releasecredit.NewReleaseCreditCommandHandler(m.mCtx.Transactor, repo))

@@ -1,17 +1,21 @@
 package model
 
-import "time"
+import (
+	"go-mma/shared/common/idgen"
+	"time"
+)
 
 type Order struct {
-	ID         int        `db:"id"`
-	CustomerID int        `db:"customer_id"`
+	ID         int64      `db:"id"`
+	CustomerID int64      `db:"customer_id"`
 	OrderTotal int        `db:"order_total"`
 	CreatedAt  time.Time  `db:"created_at"`
 	CanceledAt *time.Time `db:"canceled_at"`
 }
 
-func NewOrder(customerID int, orderTotal int) *Order {
+func NewOrder(customerID int64, orderTotal int) *Order {
 	return &Order{
+		ID:         idgen.GenerateTimeRandomID(),
 		CustomerID: customerID,
 		OrderTotal: orderTotal,
 	}

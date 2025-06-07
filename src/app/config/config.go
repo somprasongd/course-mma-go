@@ -13,7 +13,6 @@ var (
 )
 
 type Config struct {
-	AppVersion      string
 	HTTPPort        int
 	GracefulTimeout time.Duration
 	DSN             string
@@ -21,7 +20,6 @@ type Config struct {
 
 func Load() (*Config, error) {
 	config := &Config{
-		AppVersion:      env.GetDefault("APP_VERSION", "0.0.1"),
 		HTTPPort:        env.GetIntDefault("HTTP_PORT", 8090),
 		GracefulTimeout: env.GetDurationDefault("GRACEFUL_TIMEOUT", 5*time.Second),
 		DSN:             env.Get("DB_DSN"),

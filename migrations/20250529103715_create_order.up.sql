@@ -1,6 +1,6 @@
 CREATE TABLE public.orders (
-	id serial4 NOT NULL,
-	customer_id int4 NOT NULL,
+	id BIGINT NOT NULL,
+	customer_id BIGINT NOT NULL,
 	order_total int4 NOT NULL,
 	created_at timestamp DEFAULT CURRENT_TIMESTAMP NULL,
 	canceled_at timestamp NULL,

@@ -5,26 +5,26 @@ import (
 	"go-mma/modules/customer/domainerrors"
 	"go-mma/modules/customer/internal/model"
 	"go-mma/modules/customer/internal/repository"
+	"go-mma/shared/common/domain"
 	"go-mma/shared/common/logger"
 	"go-mma/shared/common/storage/sqldb/transactor"
-
-	notiService "go-mma/modules/notification/service"
 )
 
 type createCustomerCommandHandler struct {
 	transactor transactor.Transactor
 	custRepo   repository.CustomerRepository
-	notiSvc    notiService.NotificationService
+	dispatcher domain.DomainEventDispatcher
 }
 
 func NewCreateCustomerCommandHandler(
 	transactor transactor.Transactor,
 	custRepo repository.CustomerRepository,
-	notiSvc notiService.NotificationService) *createCustomerCommandHandler {
+	dispatcher domain.DomainEventDispatcher,
+) *createCustomerCommandHandler {
 	return &createCustomerCommandHandler{
 		transactor: transactor,
 		custRepo:   custRepo,
-		notiSvc:    notiSvc,
+		dispatcher: dispatcher,
 	}
 }
 
@@ -38,7 +38,7 @@ func (h *createCustomerCommandHandler) Handle(ctx context.Context, cmd *CreateCu
 	customer := model.NewCustomer(cmd.Email, cmd.Credit)
 
 	// ย้ายส่วนที่ติดต่อฐานข้อมูล กับส่งอีเมลมาทำงานใน WithinTransaction
-	err := h.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
+	err := h.transactor.WithinTransaction(ctx, func(ctx context.Context, registerPostCommitHook func(transactor.PostCommitHook)) error {
 
 		// ส่งไปที่ Repository Layer เพื่อบันทึกข้อมูลลงฐานข้อมูล
 		if err := h.custRepo.Create(ctx, customer); err != nil {
@@ -47,14 +47,13 @@ func (h *createCustomerCommandHandler) Handle(ctx context.Context, cmd *CreateCu
 			return err
 		}
 
-		// ส่งอีเมลต้อนรับ
-		if err := h.notiSvc.SendEmail(customer.Email, "Welcome to our service!", map[string]any{
-			"message": "Thank you for joining us! We are excited to have you as a member.",
-		}); err != nil {
-			// error logging
-			logger.Log.Error(err.Error())
-			return err
-		}
+		// ดึง domain events จาก customer model
+		events := customer.PullDomainEvents()
+
+		// ให้ dispatch หลัง commit แล้ว
+		registerPostCommitHook(func(ctx context.Context) error {
+			return h.dispatcher.Dispatch(ctx, events)
+		})
 
 		return nil
 	})

@@ -40,7 +40,7 @@ func (h *createOrderCommandHandler) Handle(ctx context.Context, cmd *CreateOrder
 	}
 
 	var order *model.Order
-	err = h.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
+	err = h.transactor.WithinTransaction(ctx, func(ctx context.Context, registerPostCommitHook func(transactor.PostCommitHook)) error {
 
 		// ตัดยอด credit ในตาราง customer
 		if _, err := mediator.Send[*customercontract.ReserveCreditCommand, *mediator.NoResponse](
@@ -58,14 +58,12 @@ func (h *createOrderCommandHandler) Handle(ctx context.Context, cmd *CreateOrder
 			return err
 		}
 
-		err = h.notiSvc.SendEmail(customer.Email, "Order Created", map[string]any{
-			"order_id": order.ID,
-			"total":    order.OrderTotal,
+		registerPostCommitHook(func(ctx context.Context) error {
+			return h.notiSvc.SendEmail(customer.Email, "Order Created", map[string]any{
+				"order_id": order.ID,
+				"total":    order.OrderTotal,
+			})
 		})
-		if err != nil {
-			logger.Log.Error(err.Error())
-			return err
-		}
 
 		return nil
 	})

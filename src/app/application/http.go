@@ -28,13 +28,13 @@ type httpServer struct {
 func newHTTPServer(config config.Config) HTTPServer {
 	return &httpServer{
 		config: config,
-		app:    newFiber(config),
+		app:    newFiber(),
 	}
 }
 
-func newFiber(config config.Config) *fiber.App {
+func newFiber() *fiber.App {
 	app := fiber.New(fiber.Config{
-		AppName: fmt.Sprintf("Go MMA v%s", config.AppVersion),
+		AppName: "Go MMA v0.0.1",
 	})
 
 	// global middleware

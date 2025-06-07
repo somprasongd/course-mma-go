@@ -36,7 +36,7 @@ func (h *cancelOrderCommandHandler) Handle(ctx context.Context, cmd *CancelOrder
 		return nil, domainerrors.ErrNoOrderID
 	}
 
-	err = h.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
+	err = h.transactor.WithinTransaction(ctx, func(ctx context.Context, registerPostCommitHook func(transactor.PostCommitHook)) error {
 
 		// ยกเลิก order
 		if err := h.orderRepo.Cancel(ctx, order.ID); err != nil {

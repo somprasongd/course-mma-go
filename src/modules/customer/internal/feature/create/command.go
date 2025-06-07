@@ -9,7 +9,7 @@ type CreateCustomerCommandResult struct {
 }
 
 // ฟังก์ชันช่วยสร้าง CreateCustomerCommandResult
-func NewCreateCustomerCommandResult(id int) *CreateCustomerCommandResult {
+func NewCreateCustomerCommandResult(id int64) *CreateCustomerCommandResult {
 	return &CreateCustomerCommandResult{
 		CreateCustomerResponse{
 			ID: id,

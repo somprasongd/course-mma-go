@@ -8,7 +8,7 @@ type CreateOrderCommandResult struct {
 	CreateOrderResponse
 }
 
-func NewCreateOrderCommandResult(id int) *CreateOrderCommandResult {
+func NewCreateOrderCommandResult(id int64) *CreateOrderCommandResult {
 	return &CreateOrderCommandResult{
 		CreateOrderResponse{ID: id},
 	}

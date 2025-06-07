@@ -9,10 +9,10 @@ import (
 )
 
 func NewEndpoint(router fiber.Router, path string) {
-	router.Post(path, createCustomerHTTPHandler)
+	router.Post(path, createOrderHTTPHandler)
 }
 
-func createCustomerHTTPHandler(c fiber.Ctx) error {
+func createOrderHTTPHandler(c fiber.Ctx) error {
 	// 1. รับ request body มาเป็น DTO
 	var req CreateOrderRequest
 	if err := c.Bind().Body(&req); err != nil {

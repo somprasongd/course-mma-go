@@ -9,12 +9,10 @@ import (
 	reservecredit "go-mma/modules/customer/internal/feature/reserve-credit"
 	"go-mma/modules/customer/internal/repository"
 	"go-mma/shared/common/domain"
+	"go-mma/shared/common/eventbus"
 	"go-mma/shared/common/mediator"
 	"go-mma/shared/common/module"
 	"go-mma/shared/common/registry"
-
-	notiModule "go-mma/modules/notification"
-	notiService "go-mma/modules/notification/service"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -31,16 +29,10 @@ func (m *moduleImp) APIVersion() string {
 	return "v1"
 }
 
-func (m *moduleImp) Init(reg registry.ServiceRegistry) error {
-	// Resolve NotificationService from the registry
-	notiSvc, err := registry.ResolveAs[notiService.NotificationService](reg, notiModule.NotificationServiceKey)
-	if err != nil {
-		return err
-	}
-
+func (m *moduleImp) Init(reg registry.ServiceRegistry, eventBus eventbus.EventBus) error {
 	// Register domain event handlerAdd commentMore actions
 	dispatcher := domain.NewSimpleDomainEventDispatcher()
-	dispatcher.Register(event.CustomerCreatedDomainEventType, eventhandler.NewCustomerCreatedDomainEventHandler(notiSvc))
+	dispatcher.Register(event.CustomerCreatedDomainEventType, eventhandler.NewCustomerCreatedDomainEventHandler(eventBus))
 
 	repo := repository.NewCustomerRepository(m.mCtx.DBCtx)
 

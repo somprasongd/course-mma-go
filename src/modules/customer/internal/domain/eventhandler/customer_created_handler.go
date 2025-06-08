@@ -3,17 +3,18 @@ package eventhandler
 import (
 	"context"
 	"go-mma/modules/customer/internal/domain/event"
-	notiService "go-mma/modules/notification/service"
 	"go-mma/shared/common/domain"
+	"go-mma/shared/common/eventbus"
+	"go-mma/shared/messaging"
 )
 
 type customerCreatedDomainEventHandler struct {
-	notiSvc notiService.NotificationService
+	eventBus eventbus.EventBus
 }
 
-func NewCustomerCreatedDomainEventHandler(notiSvc notiService.NotificationService) domain.DomainEventHandler {
+func NewCustomerCreatedDomainEventHandler(eventBus eventbus.EventBus) domain.DomainEventHandler {
 	return &customerCreatedDomainEventHandler{
-		notiSvc: notiSvc,
+		eventBus: eventBus,
 	}
 }
 
@@ -23,12 +24,12 @@ func (h *customerCreatedDomainEventHandler) Handle(ctx context.Context, evt doma
 	if !ok {
 		return domain.ErrInvalidEvent
 	}
-	// ส่งอีเมลต้อนรับ
-	if err := h.notiSvc.SendEmail(e.Email, "Welcome to our service!", map[string]any{
-		"message": "Thank you for joining us! We are excited to have you as a member.",
-	}); err != nil {
-		return err
-	}
 
-	return nil
+	// สร้าง IntegrationEvent จาก Domain Event
+	integrationEvent := messaging.NewCustomerCreatedIntegrationEvent(
+		e.CustomerID,
+		e.Email,
+	)
+
+	return h.eventBus.Publish(ctx, integrationEvent)
 }

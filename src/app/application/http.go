@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-mma/application/middleware"
+	"go-mma/build"
 	"go-mma/config"
 	"go-mma/shared/common/logger"
 	"net/http"
@@ -34,7 +35,7 @@ func newHTTPServer(config config.Config) HTTPServer {
 
 func newFiber() *fiber.App {
 	app := fiber.New(fiber.Config{
-		AppName: "Go MMA v0.0.1",
+		AppName: fmt.Sprintf("Go MMA version %s", build.Version),
 	})
 
 	// global middleware
@@ -43,6 +44,10 @@ func newFiber() *fiber.App {
 	app.Use(recover.New())              // auto-recovers from panic (internal only)
 	app.Use(middleware.RequestLogger()) // logs HTTP request
 	app.Use(middleware.ResponseError()) // จัดการ error จาก Handler Layer หากเกิดขึ้น
+
+	app.Get("/", func(c fiber.Ctx) error {
+		return c.JSON(map[string]string{"version": build.Version, "time": build.Time})
+	})
 
 	return app
 }
